@@ -1,5 +1,5 @@
 export interface PubChemInfo {
-  source: 'pubchem' | 'cir' | 'rdkit' | 'fallback';
+  source: 'pubchem' | 'cir' | 'fallback';
   cid?: string;
   name?: string;
   formula?: string;
