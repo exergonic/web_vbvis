@@ -3,7 +3,7 @@ import type { SceneContext } from '../scene';
 import { parseMolBlock } from '../mol-parser';
 import { fillMissingHydrogens } from '../hydrogens';
 import { place3D } from '../embedder';
-import { fetch3D } from '../services/resolve3d';
+import { fetch3D, computeFormula } from '../services/resolve3d';
 import type { PubChemInfo } from '../services/resolve3d';
 import { renderAtoms, renderBonds, renderOrbitals, renderLabels } from '../scene';
 
@@ -65,12 +65,9 @@ function buildScene(ctx: SceneContext) {
 }
 
 function setStatus(info: PubChemInfo) {
-  const bar = document.getElementById('status-bar')!;
   const popup = document.getElementById('info-popup')!;
 
   if (info.source === 'pubchem') {
-    bar.innerHTML = `<span class="source pubchem">PubChem 3D</span>${info.name ? `<span class="name">${info.name}</span>` : ''}`;
-
     const sourceEl = document.getElementById('info-source')!;
     sourceEl.className = 'pubchem';
     sourceEl.textContent = '✓ PubChem 3D';
@@ -87,17 +84,16 @@ function setStatus(info: PubChemInfo) {
     }
     popup.classList.remove('hidden');
   } else if (info.source === 'cir') {
-    bar.innerHTML = `<span class="source fallback">CIR fallback</span>`;
     const sourceEl = document.getElementById('info-source')!;
     sourceEl.className = 'fallback';
     sourceEl.textContent = '⚠ CIR fallback';
     document.getElementById('info-name')!.textContent = '';
     document.getElementById('info-formula')!.textContent = '';
     document.getElementById('info-weight')!.textContent = '';
+    document.getElementById('info-cid')!.textContent = '';
     document.getElementById('info-link')!.style.display = 'none';
     popup.classList.remove('hidden');
   } else {
-    bar.innerHTML = `<span class="source fallback">Embedder fallback</span>`;
     popup.classList.add('hidden');
   }
 }
@@ -127,7 +123,9 @@ export function mountJsmePanel(_container: HTMLElement, ctx: SceneContext) {
       if (result) {
         const fetched = parseMolBlock(result.sdf);
         if (fetched.atoms.length > 0) molecule = fetched;
-        setStatus(result.info);
+        // Compute formula and weight from parsed atoms
+        const { formula, weight } = computeFormula(molecule.atoms.map(a => a.element));
+        setStatus({ ...result.info, formula, weight: `${weight}` });
       } else {
         molecule = fillMissingHydrogens(molecule);
         const placed = place3D(molecule);

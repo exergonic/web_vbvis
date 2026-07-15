@@ -227,36 +227,11 @@ html, body {
   color: #666;
 }
 
-/* ── Status Bar ── */
-
-#status-bar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 28px;
-  padding: 0 12px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 11px;
-  color: #999;
-  background: rgba(0,0,0,0.5);
-  pointer-events: none;
-  z-index: 5;
-}
-
-#status-bar .source { font-weight: 600; }
-#status-bar .source.pubchem { color: #4488ff; }
-#status-bar .source.fallback { color: #ff8844; }
-#status-bar .name { color: #ccc; }
-#status-bar .formula { color: #888; }
-
 /* ── Info Popup ── */
 
 #info-popup {
   position: absolute;
-  bottom: 40px;
+  bottom: 12px;
   right: 12px;
   background: rgba(22, 22, 28, 0.94);
   border: 1px solid rgba(255,255,255,0.08);
