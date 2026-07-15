@@ -15,8 +15,8 @@ function lobePoints(length: number, maxRadius: number): { x: number; y: number }
   ];
 }
 
-const SIGMA_LENGTH = 1.0;
-const SIGMA_RADIUS = 0.3;
+const SIGMA_LENGTH = 1.4;
+const SIGMA_RADIUS = 0.25;
 const PI_LENGTH = 1.1;
 const PI_RADIUS = 0.35;
 const LONE_PAIR_LENGTH = 1.2;
