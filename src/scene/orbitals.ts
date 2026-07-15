@@ -11,10 +11,22 @@ export function renderOrbitals(
 ): void {
   const n = molecule.atoms.length;
   const adj: number[][] = Array.from({ length: n }, () => []);
+  const piCount: number[] = new Array(n).fill(0);
   for (const bond of molecule.bonds) {
     adj[bond.atom1Index].push(bond.atom2Index);
     adj[bond.atom2Index].push(bond.atom1Index);
+    const pi = Math.max(0, bond.order - 1);
+    piCount[bond.atom1Index] += pi;
+    piCount[bond.atom2Index] += pi;
   }
+
+  const VALENCE: Record<string, number> = {
+    H: 1, He: 0, Li: 1, Be: 2, B: 3,
+    C: 4, N: 5, O: 6, F: 7,
+    Na: 1, Mg: 2, Al: 3, Si: 4, P: 5, S: 6, Cl: 7,
+    K: 1, Ca: 2, Ga: 3, Ge: 4, As: 5, Se: 6, Br: 7,
+    Rb: 1, Sr: 2, In: 3, Sn: 4, Sb: 5, Te: 6, I: 7,
+  };
 
   for (let i = 0; i < molecule.atoms.length; i++) {
     const atom = molecule.atoms[i];
@@ -41,7 +53,18 @@ export function renderOrbitals(
       return [n.x - atom.x, n.y - atom.y, n.z - atom.z];
     });
 
-    const hyb = assignHybridization(atom.element, neighborVectors);
+    // Compute steric number from σ bonds + lone pairs
+    const sigmaBonds = neighbors.length;
+    const valence = VALENCE[atom.element] || 4;
+    const remaining = valence - sigmaBonds - piCount[i];
+    const lonePairs = Math.max(0, remaining / 2);
+    const stericNumber = sigmaBonds + lonePairs;
+
+    // Use angle-based hybridization when possible, fall back to steric number
+    const hyb = neighborVectors.length >= 2
+      ? assignHybridization(atom.element, neighborVectors)
+      : assignBySteric(stericNumber);
+
     const color = getElementColor(atom.element);
 
     // Sigma bonds: lobes pointing toward each neighbor
@@ -51,17 +74,11 @@ export function renderOrbitals(
       group.add(mesh);
     }
 
-    // Lone pairs: unfilled hybrid orbital directions
-    if (hyb.hybridization === 'sp3' && neighborVectors.length < 4) {
-      const lonePairDirs = getLonePairDirections(neighborVectors, 4);
-      for (const lpDir of lonePairDirs) {
-        const mesh = createLobeMesh(lonePairLobe(), 0xffaa44, 0.5);
-        orientLobe(mesh, atomPos, lpDir);
-        group.add(mesh);
-      }
-    } else if (hyb.hybridization === 'sp2' && neighborVectors.length === 2) {
-      const lonePairDirs = getLonePairDirections(neighborVectors, 3);
-      for (const lpDir of lonePairDirs) {
+    // Lone pairs in unfilled hybrid orbital directions
+    if (lonePairs > 0) {
+      const totalHybrids = stericNumber;
+      const lpDirs = getLonePairDirections(neighborVectors, totalHybrids);
+      for (const lpDir of lpDirs) {
         const mesh = createLobeMesh(lonePairLobe(), 0xffaa44, 0.5);
         orientLobe(mesh, atomPos, lpDir);
         group.add(mesh);
@@ -73,17 +90,27 @@ export function renderOrbitals(
       const normal = crossProduct(neighborVectors[0], neighborVectors[1]);
       const len = Math.sqrt(normal[0] ** 2 + normal[1] ** 2 + normal[2] ** 2);
       if (len > 1e-6) {
-        normal[0] /= len;
-        normal[1] /= len;
-        normal[2] /= len;
+        normal[0] /= len; normal[1] /= len; normal[2] /= len;
         addPiOrbital(group, atomPos, [normal], 0x4488ff);
       }
+    } else if (hyb.hybridization === 'sp2' && neighborVectors.length === 1) {
+      // Carbonyl O: find perpendicular to the sigma bond for π orbital
+      const perp = findPerpendicular(neighborVectors[0]);
+      addPiOrbital(group, atomPos, [perp], 0x4488ff);
     } else if (hyb.hybridization === 'sp' && neighborVectors.length >= 2) {
       const axis = neighborVectors[0];
       const perp = findPerpendicular(axis);
       const perp2 = crossProduct(axis, perp);
       addPiOrbital(group, atomPos, [perp, perp2], 0x4488ff);
     }
+  }
+}
+
+function assignBySteric(steric: number): { hybridization: string; geometry: string } {
+  switch (steric) {
+    case 2: return { hybridization: 'sp', geometry: 'linear' };
+    case 3: return { hybridization: 'sp2', geometry: 'trigonal_planar' };
+    default: return { hybridization: 'sp3', geometry: 'tetrahedral' };
   }
 }
 
@@ -237,7 +264,20 @@ function getLonePairDirections(
   if (missing === 2 && sigmaDirs.length >= 1) {
     const a = vecNormalize(sigmaDirs[0]);
     const perp = findPerpendicular(a);
-    return [perp, [-perp[0], -perp[1], -perp[2]]];
+    // sp² with 1 σ bond: 2 lone pairs at ±120° (trigonal planar)
+    const cos120 = -0.5;
+    const sin120 = Math.sqrt(3) / 2;
+    const lp1: [number, number, number] = [
+      cos120 * a[0] + sin120 * perp[0],
+      cos120 * a[1] + sin120 * perp[1],
+      cos120 * a[2] + sin120 * perp[2],
+    ];
+    const lp2: [number, number, number] = [
+      cos120 * a[0] - sin120 * perp[0],
+      cos120 * a[1] - sin120 * perp[1],
+      cos120 * a[2] - sin120 * perp[2],
+    ];
+    return [vecNormalize(lp1), vecNormalize(lp2)];
   }
 
   // 3 lone pairs: canonical tetrahedron aligned to sigma bond
