@@ -91,7 +91,7 @@ export function renderOrbitals(
 
     // Lone pairs in unfilled hybrid orbital directions
     if (lonePairs > 0) {
-      const totalHybrids = stericNumber;
+      const totalHybrids = sigmaBonds + lonePairs;
       const lpDirs = getLonePairDirections(neighborVectors, totalHybrids, piDirection);
       for (const lpDir of lpDirs) {
         const mesh = createLobeMesh(lonePairLobe(), 0xffaa44, 0.5);
