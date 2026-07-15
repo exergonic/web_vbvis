@@ -65,14 +65,15 @@ export function renderOrbitals(
     let lonePairs = Math.max(0, stericNumber - sigmaBonds);
 
     // Conjugation: atoms adjacent to a π bond move one σ lone pair into the p orbital
-    // Exclude π bonds that our atom shares with the neighbor (e.g. C=O's own π)
-    const hasPiNeighbor = neighbors.some((ni) => {
+    // Check each neighbor's external π bonds (excluding shared π between atom and neighbor)
+    const piNeighborCount = neighbors.filter((ni) => {
       const sharedPi = molecule.bonds
         .filter((b) => (b.atom1Index === i && b.atom2Index === ni) || (b.atom1Index === ni && b.atom2Index === i))
         .reduce((s, b) => s + Math.max(0, b.order - 1), 0);
       return (piCount[ni] - sharedPi) > 0;
-    });
-    const conjugated = lonePairs > 0 && hasPiNeighbor;
+    }).length;
+    // Only conjugate if not all neighbors are π-rich (prevents ring delocalization like pyridine)
+    const conjugated = lonePairs > 0 && piNeighborCount > 0 && piNeighborCount < neighbors.length;
     if (conjugated) lonePairs -= 1;
 
     const color = getElementColor(atom.element);
