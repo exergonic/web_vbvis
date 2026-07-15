@@ -83,4 +83,19 @@ export function setupControls(ctx: SceneContext) {
     a.download = 'molecule.png';
     a.click();
   });
+
+  // Cite dialog
+  const citeBtn = document.getElementById('cite-btn')!;
+  const citeDialog = document.getElementById('cite-dialog')!;
+  citeBtn.addEventListener('click', () => citeDialog.classList.remove('hidden'));
+  document.getElementById('cite-close')!.addEventListener('click', () => citeDialog.classList.add('hidden'));
+  citeDialog.addEventListener('click', (e) => { if (e.target === citeDialog) citeDialog.classList.add('hidden'); });
+
+  document.getElementById('cite-copy')!.addEventListener('click', async () => {
+    const text = document.getElementById('cite-text')!.textContent || '';
+    await navigator.clipboard.writeText(text);
+    const btn = document.getElementById('cite-copy')!;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy to clipboard'; }, 2000);
+  });
 }

@@ -32,17 +32,57 @@ html, body {
 #brand-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding-bottom: 14px;
-  font-size: 20px;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  padding-bottom: 12px;
+  font-size: 16px;
   font-weight: 700;
   color: #222;
   flex-shrink: 0;
 }
 
-#brand-bar svg {
-  width: 36px;
-  height: 36px;
+#brand-bar svg:first-child {
+  width: 28px;
+  height: 28px;
+}
+
+.brand-title { font-size: 17px; }
+
+.brand-version {
+  font-size: 11px;
+  font-weight: 400;
+  color: #999;
+  margin-right: auto;
+}
+
+.brand-btn {
+  font-size: 11px;
+  background: none;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  padding: 2px 8px;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.brand-btn:hover {
+  border-color: #4488ff;
+  color: #4488ff;
+}
+
+.brand-link {
+  display: flex;
+  color: #666;
+  transition: color 0.12s;
+}
+.brand-link:hover { color: #222; }
+
+.brand-copyright {
+  width: 100%;
+  font-size: 10px;
+  font-weight: 400;
+  color: #aaa;
 }
 
 #jsme_container {
@@ -324,4 +364,72 @@ html, body {
   text-decoration: none;
 }
 #info-link:hover { text-decoration: underline; }
+
+/* ── Cite Dialog ── */
+
+#cite-dialog {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.45);
+  z-index: 100;
+  transition: opacity 0.2s;
+}
+
+#cite-dialog.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#cite-content {
+  background: #fff;
+  border-radius: 10px;
+  padding: 24px 28px;
+  max-width: 420px;
+  position: relative;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+}
+
+#cite-content h3 {
+  font-size: 15px;
+  margin-bottom: 10px;
+  color: #222;
+}
+
+#cite-content p {
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+#cite-text {
+  display: block;
+  font-size: 12px;
+  background: #f5f5f5;
+  padding: 12px;
+  border-radius: 6px;
+  color: #333;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+#cite-copy {
+  display: block;
+  margin-left: auto;
+}
+
+#cite-close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #888;
+  cursor: pointer;
+}
+#cite-close:hover { color: #333; }
 
