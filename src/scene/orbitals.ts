@@ -101,7 +101,8 @@ export function renderOrbitals(
       piDirection = getPiDirectionFromNeighbor(i, adj, molecule, piCount, atomPos);
     }
     // sp² with enough own neighbors: compute π from own σ plane
-    if (!piDirection && hyb.hybridization === 'sp2' && neighborVectors.length >= 2) {
+    // Only if atom has its own π bonds or was conjugated (avoids spurious π on e.g. OH in H₂SO₄)
+    if (!piDirection && hyb.hybridization === 'sp2' && neighborVectors.length >= 2 && (piCount[i] > 0 || conjugated)) {
       const nrm = vecNormalize(crossProduct(neighborVectors[0], neighborVectors[1]));
       if (nrm[0] !== 0 || nrm[1] !== 0 || nrm[2] !== 0) piDirection = nrm;
     }
