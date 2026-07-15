@@ -319,6 +319,12 @@ html, body {
   color: #888;
 }
 
+#info-cid {
+  font-size: 10px;
+  color: #666;
+  margin-top: 1px;
+}
+
 #info-link {
   display: inline-block;
   margin-top: 6px;

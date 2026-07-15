@@ -77,6 +77,7 @@ function setStatus(info: PubChemInfo) {
     document.getElementById('info-name')!.textContent = info.name || '';
     document.getElementById('info-formula')!.textContent = info.formula || '';
     document.getElementById('info-weight')!.textContent = info.weight ? `MW ${info.weight}` : '';
+    document.getElementById('info-cid')!.textContent = info.cid ? `CID ${info.cid}` : '';
     const link = document.getElementById('info-link')! as HTMLAnchorElement;
     if (info.cid) {
       link.href = `https://pubchem.ncbi.nlm.nih.gov/compound/${info.cid}`;
