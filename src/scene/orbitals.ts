@@ -65,18 +65,25 @@ export function renderOrbitals(
     let lonePairs = Math.max(0, stericNumber - sigmaBonds);
 
     // Conjugation: atoms adjacent to a π bond move one σ lone pair into the p orbital
-    // Check each neighbor's external π bonds (excluding shared π between atom and neighbor)
+    // For 2-neighbor atoms (like pyridine N), only conjugate if neighbor is a carbonyl C
+    // For wider-coordination atoms (like aniline), conjugate if any π-rich neighbor exists
     const piNeighborCount = neighbors.filter((ni) => {
       const sharedPi = molecule.bonds
         .filter((b) => (b.atom1Index === i && b.atom2Index === ni) || (b.atom1Index === ni && b.atom2Index === i))
         .reduce((s, b) => s + Math.max(0, b.order - 1), 0);
       return (piCount[ni] - sharedPi) > 0;
     }).length;
-    // Only conjugate if not all neighbors are π-rich (prevents ring delocalization like pyridine)
-    const conjugated = lonePairs > 0 && piNeighborCount > 0 && piNeighborCount < neighbors.length;
-    if (atom.element === 'N' && neighbors.length === 2) {
-      console.log(`N: elem=${atom.element} n=${neighbors.length} piNbr=${piNeighborCount} lp=${lonePairs} conj=${conjugated}`);
-    }
+    const isCarbonylAdjacent = neighbors.some((ni) =>
+      molecule.atoms[ni].element === 'C' &&
+      molecule.bonds.some((b) => {
+        const oth = b.atom1Index === ni ? b.atom2Index : b.atom2Index === ni ? b.atom1Index : -1;
+        return oth >= 0 && oth !== i && molecule.atoms[oth].element === 'O' && b.order >= 2;
+      })
+    );
+    const conjugated = lonePairs > 0 && (
+      (neighbors.length === 2 && isCarbonylAdjacent) ||
+      (neighbors.length !== 2 && piNeighborCount > 0 && piNeighborCount < neighbors.length)
+    );
     if (conjugated) lonePairs -= 1;
 
     const color = getElementColor(atom.element);
