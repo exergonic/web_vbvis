@@ -113,6 +113,17 @@ export function renderOrbitals(
       if (nrm[0] !== 0 || nrm[1] !== 0 || nrm[2] !== 0) piDirection = nrm;
     }
 
+    // Ensure π direction is perpendicular to the σ bond (project out parallel component)
+    if (piDirection && neighborVectors.length > 0) {
+      const ref = vecNormalize(neighborVectors[0]);
+      const dot = vecDot(ref, piDirection);
+      piDirection = vecNormalize([
+        piDirection[0] - dot * ref[0],
+        piDirection[1] - dot * ref[1],
+        piDirection[2] - dot * ref[2],
+      ]);
+    }
+
     // Lone pairs in unfilled hybrid orbital directions
     if (lonePairs > 0) {
       const totalHybrids = sigmaBonds + lonePairs;
