@@ -14,23 +14,23 @@ export function createLobeMesh(
   switch (preset) {
     case 'glossy':
       mat = new THREE.MeshPhongMaterial({
-        color, transparent: true, opacity: Math.min(1, opacity + 0.2),
+        color, transparent: true, opacity: Math.min(1, opacity + 0.15),
         side: THREE.DoubleSide, depthWrite: false,
-        shininess: 80, specular: 0x444444,
+        shininess: 60, specular: 0x333333,
       });
       break;
     case 'matte':
       mat = new THREE.MeshPhongMaterial({
-        color, transparent: true, opacity: Math.min(1, opacity + 0.25),
+        color, transparent: true, opacity: Math.min(1, opacity + 0.2),
         side: THREE.DoubleSide, depthWrite: false,
-        shininess: 5, specular: 0x000000,
+        shininess: 3, specular: 0x000000,
       });
       break;
-    default:
+    default: // glass — bright, shiny, almost metallic
       mat = new THREE.MeshPhongMaterial({
-        color, transparent: true, opacity,
+        color, transparent: true, opacity: Math.min(1, opacity * 0.85),
         side: THREE.DoubleSide, depthWrite: false,
-        shininess: 30, specular: 0x222222,
+        shininess: 300, specular: 0xffffff,
       });
   }
   return new THREE.Mesh(geo, mat);

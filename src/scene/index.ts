@@ -3,3 +3,4 @@ export type { SceneContext, DisplaySettings } from './setup';
 export { renderAtoms } from './atoms';
 export { renderBonds } from './bonds';
 export { renderOrbitals } from './orbitals';
+export { renderLabels } from './labels';

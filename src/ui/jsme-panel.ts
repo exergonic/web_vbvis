@@ -4,7 +4,7 @@ import { parseMolBlock } from '../mol-parser';
 import { fillMissingHydrogens } from '../hydrogens';
 import { place3D } from '../embedder';
 import { fetch3D } from '../services/resolve3d';
-import { renderAtoms, renderBonds, renderOrbitals } from '../scene';
+import { renderAtoms, renderBonds, renderOrbitals, renderLabels } from '../scene';
 
 declare global {
   interface Window {
@@ -31,11 +31,14 @@ function buildScene(ctx: SceneContext) {
   };
   clearGroup(ctx.moleculeGroup);
   clearGroup(ctx.orbitalGroup);
+  clearGroup(ctx.labelGroup);
 
   const { atoms, bonds } = ctx.currentMolecule;
   renderAtoms(ctx.moleculeGroup, atoms, ctx.display);
   renderBonds(ctx.moleculeGroup, atoms, bonds, ctx.display);
   renderOrbitals(ctx.orbitalGroup, ctx.currentMolecule, ctx.display.orbitalPreset);
+  renderLabels(ctx.labelGroup, ctx.currentMolecule);
+  ctx.labelGroup.visible = ctx.display.showLabels;
 
   const center = new THREE.Vector3();
   ctx.moleculeGroup.children.forEach((child) => {

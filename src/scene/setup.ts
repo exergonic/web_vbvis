@@ -16,6 +16,7 @@ export interface SceneContext {
   controls: TrackballControls;
   moleculeGroup: THREE.Group;
   orbitalGroup: THREE.Group;
+  labelGroup: THREE.Group;
   display: DisplaySettings;
   currentMolecule?: Molecule;
   rerender: () => void;
@@ -46,6 +47,8 @@ export function initScene(container: HTMLElement): SceneContext {
   const orbitalGroup = new THREE.Group();
   orbitalGroup.visible = false;
   scene.add(orbitalGroup);
+  const labelGroup = new THREE.Group();
+  scene.add(labelGroup);
 
   function animate() {
     requestAnimationFrame(animate);
@@ -64,7 +67,7 @@ export function initScene(container: HTMLElement): SceneContext {
   window.addEventListener('resize', handleResize);
 
   return {
-    scene, camera, renderer, controls, moleculeGroup, orbitalGroup,
+    scene, camera, renderer, controls, moleculeGroup, orbitalGroup, labelGroup,
     display: { atomScale: 1, bondScale: 1, showLabels: false, orbitalPreset: 'glass' },
     rerender: () => {},
   };

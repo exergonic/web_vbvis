@@ -36,6 +36,7 @@ export function setupControls(ctx: SceneContext) {
   const labelsToggle = panel.querySelector<HTMLInputElement>('#ctrl-show-labels')!;
   labelsToggle.addEventListener('change', () => {
     ctx.display.showLabels = labelsToggle.checked;
+    ctx.labelGroup.visible = labelsToggle.checked;
   });
 
   // Orbital Presets
