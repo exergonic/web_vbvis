@@ -46,6 +46,7 @@ export function renderOrbitals(
       });
       const mesh = new THREE.Mesh(geo, mat);
       mesh.position.set(atom.x, atom.y, atom.z);
+      mesh.userData = { atomIndex: i, element: 'H', lobeType: '1s', label: '1s' };
       group.add(mesh);
       continue;
     }
@@ -60,6 +61,9 @@ export function renderOrbitals(
     const hyb = neighborVectors.length >= 2
       ? assignHybridization(atom.element, neighborVectors)
       : assignBySteric(Math.min(4, Math.max(2, neighbors.length + Math.round(Math.max(0, (VALENCE[atom.element] || 4) - neighbors.length - piCount[i]) / 2))));
+
+    // Label for userData: map 'sp2' → 'sp²', 'sp3' → 'sp³'
+    const hybLabel = hyb.hybridization === 'sp2' ? 'sp²' : hyb.hybridization === 'sp3' ? 'sp³' : hyb.hybridization;
 
     // Steric number from hybridization: sp→2, sp²→3, sp³→4
     const stericNumber = hyb.hybridization === 'sp' ? 2
@@ -96,6 +100,7 @@ export function renderOrbitals(
     // Sigma bonds: lobes pointing toward each neighbor
     for (const vec of neighborVectors) {
       const mesh = createLobeMesh(sigmaLobe(), color, 0.6, preset, atomScale);
+      mesh.userData = { atomIndex: i, element: atom.element, lobeType: 'sigma', label: hybLabel };
       orientLobe(mesh, atomPos, vec);
       group.add(mesh);
     }
@@ -134,6 +139,7 @@ export function renderOrbitals(
       const lpDirs = getLonePairDirections(neighborVectors, totalHybrids, piDirection);
       for (const lpDir of lpDirs) {
         const mesh = createLobeMesh(lonePairLobe(), colorScheme.lonePair, 0.5, preset, atomScale);
+        mesh.userData = { atomIndex: i, element: atom.element, lobeType: 'lone_pair', label: hybLabel };
         orientLobe(mesh, atomPos, lpDir);
         group.add(mesh);
       }
@@ -141,12 +147,12 @@ export function renderOrbitals(
 
     // Pi orbitals based on hybridization
     if (piDirection) {
-      addPiOrbital(group, atomPos, [piDirection], colorScheme.pi, preset, atomScale);
+      addPiOrbital(group, atomPos, [piDirection], colorScheme.pi, preset, atomScale, i, atom.element);
     } else if (hyb.hybridization === 'sp' && neighborVectors.length >= 2) {
       const axis = neighborVectors[0];
       const perp = vecNormalize(findPerpendicular(axis));
       const perp2 = vecNormalize(crossProduct(axis, perp));
-      addPiOrbital(group, atomPos, [perp, perp2], colorScheme.pi);
+      addPiOrbital(group, atomPos, [perp, perp2], colorScheme.pi, undefined, undefined, i, atom.element);
     }
   }
 }
@@ -166,6 +172,8 @@ function addPiOrbital(
   color: number,
   preset: 'glass' | 'glossy' | 'matte' | 'metallic' = 'glass',
   atomScale: number = 1,
+  atomIndex?: number,
+  element?: string,
 ): void {
   for (const dir of directions) {
     const normalized: [number, number, number] = [
@@ -178,10 +186,12 @@ function addPiOrbital(
     normalized[2] /= len;
 
     const positive = createLobeMesh(piLobe(), color, 0.75, preset, atomScale);
+    positive.userData = { atomIndex, element, lobeType: 'pi', label: 'p' };
     orientLobe(positive, origin, normalized);
     group.add(positive);
 
     const negative = createLobeMesh(piLobe(), color, 0.75, preset, atomScale);
+    negative.userData = { atomIndex, element, lobeType: 'pi', label: 'p' };
     orientLobe(negative, origin, [
       -normalized[0],
       -normalized[1],

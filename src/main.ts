@@ -3,6 +3,7 @@ import type { SceneContext } from './scene';
 import { initScene, renderAtoms, renderBonds, renderOrbitals, renderLabels } from './scene';
 import { mountJsmePanel } from './ui/jsme-panel';
 import { setupControls } from './ui/controls';
+import { setupTooltip } from './ui/tooltip';
 import { parseMolBlock } from './mol-parser';
 import { EXAMPLES } from './data/examples';
 
@@ -99,6 +100,12 @@ async function main() {
   setupControls(scene);
   setupSplitter();
   setupExamples(scene);
+  setupTooltip(
+    document.getElementById('canvas-container')!,
+    scene.camera,
+    scene.moleculeGroup,
+    scene.orbitalGroup,
+  );
 }
 
 main();

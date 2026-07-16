@@ -573,3 +573,24 @@ html, body {
 }
 #cite-close:hover { color: #333; }
 
+/* ── Tooltip ── */
+
+#tooltip {
+  position: fixed;
+  background: rgba(20, 20, 25, 0.9);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 5px;
+  padding: 4px 9px;
+  font-size: 12px;
+  color: #ddd;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 50;
+  backdrop-filter: blur(4px);
+  transition: opacity 0.1s;
+}
+
+#tooltip.hidden {
+  opacity: 0;
+}
+
