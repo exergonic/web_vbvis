@@ -282,10 +282,7 @@ function classifyAtoms(mol: string): Array<{
     const sigmaBonds = neighbors.length;
     let lonePairs = Math.max(0, stericNumber - sigmaBonds);
 
-    const ohOverride = hyb.hybridization === 'sp2' && sigmaBonds === 2 && piCount[i] === 0 && atom.element === 'O';
-    if (ohOverride) lonePairs = 2;
-
-    const PI_CONJ_SOURCES = new Set(['C', 'N', 'O']);
+    const PI_CONJ_SOURCES = new Set(['C', 'N', 'O', 'S']);
     const piNeighborCount = neighbors.filter((ni) => {
       if (!PI_CONJ_SOURCES.has(molecule.atoms[ni].element)) return false;
       const sharedPi = molecule.bonds
@@ -293,8 +290,12 @@ function classifyAtoms(mol: string): Array<{
         .reduce((s, b) => s + Math.max(0, b.order - 1), 0);
       return (piCount[ni] - sharedPi) > 0;
     }).length;
+
+    const ohOverride = hyb.hybridization === 'sp2' && sigmaBonds === 2 && piCount[i] === 0 && atom.element === 'O' && piNeighborCount === 0;
+    if (ohOverride) lonePairs = 2;
+
     const conjugated = lonePairs > 0 && piNeighborCount > 0 && piCount[i] === 0;
-    if (conjugated) lonePairs -= 1;
+    if (conjugated && hyb.hybridization === 'sp3') lonePairs -= 1;
 
     const hasPi = piCount[i] > 0 || conjugated || (hyb.hybridization === 'sp2' && !ohOverride && piCount[i] === 0)
       || (hyb.hybridization === 'sp' && neighborVectors.length >= 1);

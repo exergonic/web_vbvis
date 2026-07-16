@@ -71,19 +71,10 @@ export function renderOrbitals(
     const sigmaBonds = neighbors.length;
     let lonePairs = Math.max(0, stericNumber - sigmaBonds);
 
-    // sp² with 2 neighbors and no π bonds is likely an OH-type oxygen misclassified
-    // by angle measurement (S-O-H in H₂SO₄ gl ~120°); force sp³ with 2 σ lone pairs.
-    const ohOverride = hyb.hybridization === 'sp2' && sigmaBonds === 2 && piCount[i] === 0 && atom.element === 'O';
-    if (ohOverride) {
-      lonePairs = 2;
-    }
-
     // Conjugation: if any neighbor has external π bonds and atom itself has none,
-    // promote one σ lone pair into the p orbital (furan O, aniline N, amide N).
+    // promote one σ lone pair into the p orbital (furan O, aniline N, amide N, H₂SO₄ O).
     // Skip if atom already has π bonds (pyridine N with N=C).
-    // Only period-2 neighbors (C, N, O) can act as conjugation sources — S, P, etc.
-    // have expanded octets and their π bonds don't propagate through σ single bonds.
-    const PI_CONJ_SOURCES = new Set(['C', 'N', 'O']);
+    const PI_CONJ_SOURCES = new Set(['C', 'N', 'O', 'S']);
     const piNeighborCount = neighbors.filter((ni) => {
       if (!PI_CONJ_SOURCES.has(molecule.atoms[ni].element)) return false;
       const sharedPi = molecule.bonds
@@ -91,14 +82,28 @@ export function renderOrbitals(
         .reduce((s, b) => s + Math.max(0, b.order - 1), 0);
       return (piCount[ni] - sharedPi) > 0;
     }).length;
+
+    // sp² with 2 σ bonds and no own π bonds: could be an OH-type oxygen whose
+    // bond angle happened to measure ~120° (H₂O, alcohols). If the neighbor has
+    // no π system (piNeighborCount === 0), force sp³ with 2 σ lone pairs.
+    // If the neighbor does have π bonds (e.g. S=O in H₂SO₄), one lone pair
+    // conjugates into the π system instead.
+    const ohOverride = hyb.hybridization === 'sp2' && sigmaBonds === 2 && piCount[i] === 0 && atom.element === 'O' && piNeighborCount === 0;
+    if (ohOverride) {
+      lonePairs = 2;
+    }
+
     // Conjugation: a σ lone pair can delocalize into a neighbor's π system.
     // Skip if the atom already has its own π bond (piCount > 0) — the σ lone pair
     // is orthogonal to that π system and can't overlap.
+    // Only sp³ atoms lose a σ lone pair here — sp² already has an unhybridized p
+    // orbital, so no promotion is needed.
     const conjugated = lonePairs > 0 && piNeighborCount > 0 && piCount[i] === 0;
-    if (conjugated) lonePairs -= 1;
+    if (conjugated && hyb.hybridization === 'sp3') lonePairs -= 1;
 
     // Effective hybridization label: conjugation promotes a σ lone pair to a p orbital,
-    // reducing the remaining σ count by one (sp³→sp²). ohOverride does the opposite.
+    // reducing the remaining σ count by one (sp³→sp²). ohOverride does the opposite
+    // (sp²-measured O with no conjugating neighbor → sp³).
     const effectiveHyb = conjugated && hyb.hybridization === 'sp3' ? 'sp²' : ohOverride ? 'sp³' : hybLabel;
 
     const color = colorScheme.scheme === 'element' ? getElementColor(atom.element) : colorScheme.sigma;
