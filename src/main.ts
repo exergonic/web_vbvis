@@ -103,7 +103,6 @@ async function main() {
   setupTooltip(
     document.getElementById('canvas-container')!,
     scene.camera,
-    scene.moleculeGroup,
     scene.orbitalGroup,
   );
 }

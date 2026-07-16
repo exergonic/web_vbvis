@@ -10,7 +10,7 @@ export function setupTooltip(container: HTMLElement, camera: THREE.Camera, ...gr
     allObjects.length = 0;
     for (const g of groups) {
       g.children.forEach((child) => {
-        if (child instanceof THREE.Mesh && child.userData.lobeType !== 'atom') {
+        if (child instanceof THREE.Mesh && child.userData.lobeType) {
           allObjects.push(child);
         }
       });
