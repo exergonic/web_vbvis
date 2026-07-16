@@ -1,6 +1,7 @@
 import { initScene } from './scene';
 import { mountJsmePanel } from './ui/jsme-panel';
 import { setupControls } from './ui/controls';
+import { EXAMPLES } from './data/examples';
 
 function setupSplitter() {
   const splitter = document.getElementById('splitter')!;
@@ -18,7 +19,6 @@ function setupSplitter() {
     const w = Math.max(280, Math.min(e.clientX, window.innerWidth - 200));
     jsmePanel.style.width = w + 'px';
     window.dispatchEvent(new Event('resize'));
-    // Repaint JSME so it picks up the new container size
     if ((window as any).jsmeApplet) {
       (window as any).jsmeApplet.repaint();
     }
@@ -27,10 +27,28 @@ function setupSplitter() {
   splitter.addEventListener('pointerup', () => {
     dragging = false;
     splitter.classList.remove('active');
-    // Give JSME time to settle, then repaint at the new size
     if ((window as any).jsmeApplet) {
       setTimeout(() => (window as any).jsmeApplet.repaint(), 50);
     }
+  });
+}
+
+function setupExamples() {
+  const dropdown = document.getElementById('examples-dropdown') as HTMLSelectElement;
+  const renderBtn = document.getElementById('render-btn') as HTMLButtonElement;
+
+  dropdown.addEventListener('change', () => {
+    const idx = parseInt(dropdown.value);
+    if (isNaN(idx)) return;
+    const ex = EXAMPLES[idx];
+    if (!ex) return;
+
+    const applet = (window as any).jsmeApplet;
+    if (!applet) return;
+
+    applet.readMolFile(ex.mol);
+    dropdown.selectedIndex = 0;
+    renderBtn.click();
   });
 }
 
@@ -39,6 +57,7 @@ async function main() {
   mountJsmePanel(document.getElementById('jsme-panel')!, scene);
   setupControls(scene);
   setupSplitter();
+  setupExamples();
 }
 
 main();

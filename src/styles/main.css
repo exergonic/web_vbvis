@@ -72,6 +72,23 @@ html, body {
   color: #4488ff;
 }
 
+.brand-select {
+  font-size: 11px;
+  background: none;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  padding: 2px 4px;
+  color: #555;
+  cursor: pointer;
+  max-width: 100px;
+  font-family: inherit;
+}
+
+.brand-select:hover {
+  border-color: #4488ff;
+  color: #4488ff;
+}
+
 /* ── Color Scheme ── */
 
 .cs-row {
