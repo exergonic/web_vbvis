@@ -91,9 +91,10 @@ export function renderOrbitals(
         .reduce((s, b) => s + Math.max(0, b.order - 1), 0);
       return (piCount[ni] - sharedPi) > 0;
     }).length;
-    // Conjugation requires at least one π-rich neighbor. Skip when all neighbors are
-    // π-rich (ring atoms, e.g. pyridine N) — the σ lone pair is orthogonal to the π system.
-    const conjugated = lonePairs > 0 && piNeighborCount > 0 && piNeighborCount < neighbors.length && piCount[i] === 0;
+    // Conjugation: a σ lone pair can delocalize into a neighbor's π system.
+    // Skip if the atom already has its own π bond (piCount > 0) — the σ lone pair
+    // is orthogonal to that π system and can't overlap.
+    const conjugated = lonePairs > 0 && piNeighborCount > 0 && piCount[i] === 0;
     if (conjugated) lonePairs -= 1;
 
     const color = colorScheme.scheme === 'element' ? getElementColor(atom.element) : colorScheme.sigma;
