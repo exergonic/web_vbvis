@@ -97,6 +97,13 @@ export function renderOrbitals(
     const conjugated = lonePairs > 0 && piNeighborCount > 0 && piCount[i] === 0;
     if (conjugated) lonePairs -= 1;
 
+    // sp³ with 2 neighbors and its own π bond is misclassified (should be sp²).
+    // Reduce lone pairs and render a π orbital (e.g. imidazole pyridine-like N).
+    const sp3PiOverride = hyb.hybridization === 'sp3' && sigmaBonds === 2 && piCount[i] > 0 && piNeighborCount > 0;
+    if (sp3PiOverride) {
+      lonePairs = Math.min(lonePairs, 1);
+    }
+
     const color = colorScheme.scheme === 'element' ? getElementColor(atom.element) : colorScheme.sigma;
     const atomScale = getElementRadius(atom.element) + 0.2;
 
@@ -121,6 +128,11 @@ export function renderOrbitals(
     // Include sp² atoms with piCount===0 (their p orbital holds remaining valence electrons),
     // unless overridden (OH-type oxygen in H₂SO₄).
     if (!piDirection && hyb.hybridization === 'sp2' && neighborVectors.length >= 2 && !ohOverride && (piCount[i] > 0 || conjugated || piCount[i] === 0)) {
+      const nrm = vecNormalize(crossProduct(neighborVectors[0], neighborVectors[1]));
+      if (nrm[0] !== 0 || nrm[1] !== 0 || nrm[2] !== 0) piDirection = nrm;
+    }
+    // sp³ misclassified as sp² (imidazole-like): compute π from own σ plane
+    if (!piDirection && sp3PiOverride) {
       const nrm = vecNormalize(crossProduct(neighborVectors[0], neighborVectors[1]));
       if (nrm[0] !== 0 || nrm[1] !== 0 || nrm[2] !== 0) piDirection = nrm;
     }
