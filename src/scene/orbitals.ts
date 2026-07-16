@@ -97,10 +97,9 @@ export function renderOrbitals(
     const conjugated = lonePairs > 0 && piNeighborCount > 0 && piCount[i] === 0;
     if (conjugated) lonePairs -= 1;
 
-    // After conjugation, effective hybridization drops by one (sp³→sp², sp²→sp)
-    const effectiveHyb = conjugated && hyb.hybridization === 'sp3' ? 'sp²'
-      : conjugated && hyb.hybridization === 'sp2' ? 'sp'
-      : hybLabel;
+    // Effective hybridization label: conjugation promotes a σ lone pair to a p orbital,
+    // reducing the remaining σ count by one (sp³→sp²). ohOverride does the opposite.
+    const effectiveHyb = conjugated && hyb.hybridization === 'sp3' ? 'sp²' : ohOverride ? 'sp³' : hybLabel;
 
     const color = colorScheme.scheme === 'element' ? getElementColor(atom.element) : colorScheme.sigma;
     const atomScale = getElementRadius(atom.element) + 0.2;
