@@ -1,0 +1,37 @@
+name: Build Tauri
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build Tauri application
+        run: npm run tauri build
+
+      - name: Upload MSI installer
+        uses: softprops/action-gh-release@v2
+        with:
+          files: src-tauri/target/release/bundle/msi/*.msi
+          body: |
+            ## Web VBVis ${{ github.ref_name }}
+
+            Download the MSI installer for Windows below.
+
+            ### Changes
+            See the [commit log](https://github.com/exergonic/web_vbvis/commits/${{ github.ref_name }}) for details.
