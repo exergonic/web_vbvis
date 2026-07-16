@@ -1,6 +1,9 @@
-import { initScene } from './scene';
+import * as THREE from 'three';
+import type { SceneContext } from './scene';
+import { initScene, renderAtoms, renderBonds, renderOrbitals, renderLabels } from './scene';
 import { mountJsmePanel } from './ui/jsme-panel';
 import { setupControls } from './ui/controls';
+import { parseMolBlock } from './mol-parser';
 import { EXAMPLES } from './data/examples';
 
 function setupSplitter() {
@@ -19,9 +22,7 @@ function setupSplitter() {
     const w = Math.max(280, Math.min(e.clientX, window.innerWidth - 200));
     jsmePanel.style.width = w + 'px';
     window.dispatchEvent(new Event('resize'));
-    if ((window as any).jsmeApplet) {
-      (window as any).jsmeApplet.repaint();
-    }
+    if ((window as any).jsmeApplet) (window as any).jsmeApplet.repaint();
   });
 
   splitter.addEventListener('pointerup', () => {
@@ -33,9 +34,53 @@ function setupSplitter() {
   });
 }
 
-function setupExamples() {
+function loadMolecule(ctx: SceneContext, molBlock: string) {
+  const molecule = parseMolBlock(molBlock);
+  if (molecule.atoms.length === 0) return;
+
+  ctx.currentMolecule = molecule;
+
+  // Clear and rebuild
+  const clearGroup = (g: THREE.Group) => {
+    while (g.children.length > 0) {
+      const child = g.children[0];
+      g.remove(child);
+      if (child instanceof THREE.Mesh) {
+        child.geometry.dispose();
+        if (Array.isArray(child.material)) { child.material.forEach(m => m.dispose()); }
+        else { child.material.dispose(); }
+      }
+    }
+  };
+  clearGroup(ctx.moleculeGroup);
+  clearGroup(ctx.orbitalGroup);
+  clearGroup(ctx.labelGroup);
+
+  const { atoms, bonds } = molecule;
+  renderAtoms(ctx.moleculeGroup, atoms, ctx.display);
+  renderBonds(ctx.moleculeGroup, atoms, bonds, ctx.display);
+  renderOrbitals(ctx.orbitalGroup, molecule, ctx.display.orbitalPreset);
+  renderLabels(ctx.labelGroup, molecule);
+  ctx.labelGroup.visible = ctx.display.showLabels;
+
+  // Frame camera
+  const center = new THREE.Vector3();
+  ctx.moleculeGroup.children.forEach((child) => {
+    if (child instanceof THREE.Mesh) center.add(child.position);
+  });
+  center.divideScalar(ctx.moleculeGroup.children.length || 1);
+
+  const box = new THREE.Box3().setFromObject(ctx.moleculeGroup);
+  const size = box.getSize(new THREE.Vector3()).length();
+  const dist = size * 1.5;
+  ctx.camera.position.set(center.x, center.y, center.z + dist);
+  ctx.camera.lookAt(center);
+  ctx.controls.target.set(center.x, center.y, center.z);
+  ctx.controls.update();
+}
+
+function setupExamples(ctx: SceneContext) {
   const dropdown = document.getElementById('examples-dropdown') as HTMLSelectElement;
-  const renderBtn = document.getElementById('render-btn') as HTMLButtonElement;
 
   dropdown.addEventListener('change', () => {
     const idx = parseInt(dropdown.value);
@@ -43,12 +88,8 @@ function setupExamples() {
     const ex = EXAMPLES[idx];
     if (!ex) return;
 
-    const applet = (window as any).jsmeApplet;
-    if (!applet) return;
-
-    applet.readMolFile(ex.mol);
+    loadMolecule(ctx, ex.mol);
     dropdown.selectedIndex = 0;
-    renderBtn.click();
   });
 }
 
@@ -57,7 +98,7 @@ async function main() {
   mountJsmePanel(document.getElementById('jsme-panel')!, scene);
   setupControls(scene);
   setupSplitter();
-  setupExamples();
+  setupExamples(scene);
 }
 
 main();
