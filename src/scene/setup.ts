@@ -2,12 +2,22 @@ import * as THREE from 'three';
 import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls.js';
 import type { Molecule } from '../mol-parser';
 
+export type ColorScheme = 'element' | 'monochrome' | 'pedagogical' | 'complementary' | 'cool' | 'warm' | 'highcontrast' | 'custom';
+
+export interface ColorSettings {
+  scheme: ColorScheme;
+  sigma: [number, number, number];  // HSV
+  pi: [number, number, number];
+  lonePair: [number, number, number];
+}
+
 export interface DisplaySettings {
   atomScale: number;
   bondScale: number;
   showLabels: boolean;
   orbitalPreset: 'glass' | 'glossy' | 'matte';
   bgColor: string;
+  colors: ColorSettings;
 }
 
 export interface SceneContext {
@@ -71,7 +81,10 @@ export function initScene(container: HTMLElement): SceneContext {
 
   return {
     scene, camera, renderer, controls, moleculeGroup, orbitalGroup, labelGroup,
-    display: { atomScale: 1, bondScale: 1, showLabels: true, orbitalPreset: 'glass', bgColor: '#1a1a2e' },
+    display: {
+      atomScale: 1, bondScale: 1, showLabels: true, orbitalPreset: 'glass', bgColor: '#1a1a2e',
+      colors: { scheme: 'element', sigma: [0, 0, 1], pi: [0.58, 0.7, 1], lonePair: [0.1, 0.7, 1] },
+    },
     rerender: () => {},
   };
 }

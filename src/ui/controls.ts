@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import type { SceneContext } from '../scene';
+import type { SceneContext, ColorScheme } from '../scene';
+import { hsvToHex } from '../scene/color-schemes';
 
 export function setupControls(ctx: SceneContext) {
   const panel = document.getElementById('controls-panel')!;
@@ -97,5 +98,43 @@ export function setupControls(ctx: SceneContext) {
     const btn = document.getElementById('cite-copy')!;
     btn.textContent = 'Copied!';
     setTimeout(() => { btn.textContent = 'Copy to clipboard'; }, 2000);
+  });
+
+  // ── Color scheme presets ──
+
+  const csBtns = panel.querySelectorAll<HTMLButtonElement>('.cs-btn');
+  const csCustom = document.getElementById('cs-custom')!;
+  const applyScheme = (scheme: ColorScheme) => {
+    ctx.display.colors.scheme = scheme;
+    csBtns.forEach((b) => b.classList.toggle('active', b.dataset.cs === scheme));
+    csCustom.classList.toggle('hidden', scheme !== 'custom');
+    rerender();
+  };
+
+  csBtns.forEach((btn) => {
+    btn.addEventListener('click', () => applyScheme(btn.dataset.cs as ColorScheme));
+  });
+
+  // ── Custom HSV sliders ──
+
+  function updateSwatch(cIdx: number) {
+    const channel = csCustom.querySelectorAll('.cs-channel')[cIdx] as HTMLElement;
+    const h = +(channel.querySelector('.cs-hue') as HTMLInputElement).value / 360;
+    const s = +(channel.querySelector('.cs-sat') as HTMLInputElement).value / 100;
+    const v = +(channel.querySelector('.cs-val') as HTMLInputElement).value / 100;
+    const hex = hsvToHex(h, s, v);
+    (channel.querySelector('.cs-swatch') as HTMLElement).style.background = '#' + hex.toString(16).padStart(6, '0');
+
+    // Store in display settings
+    const key = ['sigma', 'pi', 'lonePair'][cIdx] as 'sigma' | 'pi' | 'lonePair';
+    ctx.display.colors[key] = [h, s, v];
+    rerender();
+  }
+
+  const allSliders = csCustom.querySelectorAll<HTMLInputElement>('input[type="range"]');
+  allSliders.forEach((slider) => {
+    const channelEl = slider.closest('.cs-channel')!;
+    const idx = Array.from(csCustom.querySelectorAll('.cs-channel')).indexOf(channelEl);
+    slider.addEventListener('input', () => updateSwatch(idx));
   });
 }

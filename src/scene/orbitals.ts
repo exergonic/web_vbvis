@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { Molecule } from '../mol-parser';
+import type { ColorScheme } from './setup';
 import { assignHybridization } from '../hybridization';
 import { createLobeMesh, orientLobe } from '../orbitals';
 import { sigmaLobe, piLobe, lonePairLobe } from '../orbitals/lathe';
@@ -9,6 +10,7 @@ export function renderOrbitals(
   group: THREE.Group,
   molecule: Molecule,
   preset: 'glass' | 'glossy' | 'matte' = 'glass',
+  colorScheme: { scheme: ColorScheme; sigma: number; pi: number; lonePair: number } = { scheme: 'element', sigma: 0xcccccc, pi: 0x4488ff, lonePair: 0xffaa44 },
 ): void {
   const n = molecule.atoms.length;
   const adj: number[][] = Array.from({ length: n }, () => []);
@@ -87,7 +89,7 @@ export function renderOrbitals(
     const conjugated = lonePairs > 0 && hasExtPiNeighbor && piCount[i] === 0;
     if (conjugated) lonePairs -= 1;
 
-    const color = getElementColor(atom.element);
+    const color = colorScheme.scheme === 'element' ? getElementColor(atom.element) : colorScheme.sigma;
     const atomScale = getElementRadius(atom.element) + 0.2;
 
     // Sigma bonds: lobes pointing toward each neighbor
@@ -129,7 +131,7 @@ export function renderOrbitals(
       const totalHybrids = sigmaBonds + lonePairs;
       const lpDirs = getLonePairDirections(neighborVectors, totalHybrids, piDirection);
       for (const lpDir of lpDirs) {
-        const mesh = createLobeMesh(lonePairLobe(), 0xffaa44, 0.5, preset, atomScale);
+        const mesh = createLobeMesh(lonePairLobe(), colorScheme.lonePair, 0.5, preset, atomScale);
         orientLobe(mesh, atomPos, lpDir);
         group.add(mesh);
       }
@@ -137,12 +139,12 @@ export function renderOrbitals(
 
     // Pi orbitals based on hybridization
     if (piDirection) {
-      addPiOrbital(group, atomPos, [piDirection], 0x4488ff, preset, atomScale);
+      addPiOrbital(group, atomPos, [piDirection], colorScheme.pi, preset, atomScale);
     } else if (hyb.hybridization === 'sp' && neighborVectors.length >= 2) {
       const axis = neighborVectors[0];
       const perp = vecNormalize(findPerpendicular(axis));
       const perp2 = vecNormalize(crossProduct(axis, perp));
-      addPiOrbital(group, atomPos, [perp, perp2], 0x4488ff);
+      addPiOrbital(group, atomPos, [perp, perp2], colorScheme.pi);
     }
   }
 }

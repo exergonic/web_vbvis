@@ -71,6 +71,76 @@ html, body {
   color: #4488ff;
 }
 
+/* ── Color Scheme ── */
+
+.cs-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.cs-btn {
+  flex: 0 0 auto;
+  padding: 3px 6px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 3px;
+  background: transparent;
+  color: #999;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.cs-btn:hover {
+  border-color: rgba(255,255,255,0.3);
+  color: #ddd;
+}
+
+.cs-btn.active {
+  background: #4488ff;
+  border-color: #4488ff;
+  color: #fff;
+}
+
+.cs-custom {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cs-custom.hidden { display: none; }
+
+.cs-channel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+}
+
+.cs-label {
+  width: 18px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #aaa;
+  text-align: right;
+}
+
+.cs-channel input[type="range"] {
+  flex: 1;
+  height: 3px;
+  accent-color: #4488ff;
+}
+
+.cs-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1px solid rgba(255,255,255,0.15);
+  flex-shrink: 0;
+}
+
 .brand-link {
   display: flex;
   color: #666;

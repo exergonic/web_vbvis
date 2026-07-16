@@ -71,6 +71,24 @@
             </div>
           </div>
           <div class="ctrl-section">
+            <span class="ctrl-label">Colors</span>
+            <div class="cs-row" id="cs-presets">
+              <button class="cs-btn active" data-cs="element">Element</button>
+              <button class="cs-btn" data-cs="monochrome">Mono</button>
+              <button class="cs-btn" data-cs="pedagogical">Pedagog</button>
+              <button class="cs-btn" data-cs="complementary">Compl</button>
+              <button class="cs-btn" data-cs="cool">Cool</button>
+              <button class="cs-btn" data-cs="warm">Warm</button>
+              <button class="cs-btn" data-cs="highcontrast">HC</button>
+              <button class="cs-btn" data-cs="custom">Custom</button>
+            </div>
+            <div id="cs-custom" class="cs-custom hidden">
+              <div class="cs-channel"><span class="cs-label">σ</span><input type="range" class="cs-hue" min="0" max="360" value="210" /><input type="range" class="cs-sat" min="0" max="100" value="70" /><input type="range" class="cs-val" min="0" max="100" value="100" /><span class="cs-swatch" style="background:#4488ff"></span></div>
+              <div class="cs-channel"><span class="cs-label">π</span><input type="range" class="cs-hue" min="0" max="360" value="210" /><input type="range" class="cs-sat" min="0" max="100" value="70" /><input type="range" class="cs-val" min="0" max="100" value="100" /><span class="cs-swatch" style="background:#4488ff"></span></div>
+              <div class="cs-channel"><span class="cs-label">LP</span><input type="range" class="cs-hue" min="0" max="360" value="36" /><input type="range" class="cs-sat" min="0" max="100" value="70" /><input type="range" class="cs-val" min="0" max="100" value="100" /><span class="cs-swatch" style="background:#ffaa44"></span></div>
+            </div>
+          </div>
+          <div class="ctrl-section">
             <span class="ctrl-label">Background</span>
             <div class="bg-row">
               <button class="bg-btn" data-bg="#111118" style="background:#111118"></button>

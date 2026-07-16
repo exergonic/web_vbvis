@@ -6,6 +6,7 @@ import { place3D } from '../embedder';
 import { fetch3D, computeFormula } from '../services/resolve3d';
 import type { PubChemInfo } from '../services/resolve3d';
 import { renderAtoms, renderBonds, renderOrbitals, renderLabels } from '../scene';
+import { hsvToHex } from '../scene/color-schemes';
 
 declare global {
   interface Window {
@@ -36,9 +37,16 @@ function rebuildDisplay(ctx: SceneContext) {
   clearGroup(ctx.labelGroup);
 
   const { atoms, bonds } = ctx.currentMolecule;
+  const c = ctx.display.colors;
+  const scheme = {
+    scheme: c.scheme,
+    sigma: hsvToHex(c.sigma[0], c.sigma[1], c.sigma[2]),
+    pi: hsvToHex(c.pi[0], c.pi[1], c.pi[2]),
+    lonePair: hsvToHex(c.lonePair[0], c.lonePair[1], c.lonePair[2]),
+  };
   renderAtoms(ctx.moleculeGroup, atoms, ctx.display);
   renderBonds(ctx.moleculeGroup, atoms, bonds, ctx.display);
-  renderOrbitals(ctx.orbitalGroup, ctx.currentMolecule, ctx.display.orbitalPreset);
+  renderOrbitals(ctx.orbitalGroup, ctx.currentMolecule, ctx.display.orbitalPreset, scheme);
   renderLabels(ctx.labelGroup, ctx.currentMolecule);
   ctx.labelGroup.visible = ctx.display.showLabels;
 }
