@@ -12,7 +12,6 @@ export function renderAtoms(group: THREE.Group, atoms: Atom[], display?: Display
     const mat = new THREE.MeshPhongMaterial({ color });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(atom.x, atom.y, atom.z);
-    mesh.userData = { atomIndex: atom.index, element: atom.element, lobeType: 'atom' };
     group.add(mesh);
   }
 }

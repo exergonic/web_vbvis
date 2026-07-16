@@ -1,16 +1,5 @@
 import * as THREE from 'three';
 
-const ELEMENT_NAMES: Record<string, string> = {
-  H: 'hydrogen', He: 'helium',
-  Li: 'lithium', Be: 'beryllium', B: 'boron',
-  C: 'carbon', N: 'nitrogen', O: 'oxygen', F: 'fluorine', Ne: 'neon',
-  Na: 'sodium', Mg: 'magnesium', Al: 'aluminium',
-  Si: 'silicon', P: 'phosphorus', S: 'sulfur', Cl: 'chlorine', Ar: 'argon',
-  K: 'potassium', Ca: 'calcium',
-  Fe: 'iron', Cu: 'copper', Zn: 'zinc', Mn: 'manganese',
-  Br: 'bromine', I: 'iodine',
-};
-
 export function setupTooltip(container: HTMLElement, camera: THREE.Camera, ...groups: THREE.Group[]) {
   const tooltip = document.getElementById('tooltip')!;
   const raycaster = new THREE.Raycaster();
@@ -21,7 +10,9 @@ export function setupTooltip(container: HTMLElement, camera: THREE.Camera, ...gr
     allObjects.length = 0;
     for (const g of groups) {
       g.children.forEach((child) => {
-        if (child instanceof THREE.Mesh) allObjects.push(child);
+        if (child instanceof THREE.Mesh && child.userData.lobeType !== 'atom') {
+          allObjects.push(child);
+        }
       });
     }
   }
@@ -40,12 +31,10 @@ export function setupTooltip(container: HTMLElement, camera: THREE.Camera, ...gr
     if (hits.length > 0) {
       const obj = hits[0].object;
       const d = obj.userData;
-      let text = '';
       const idx = d.atomIndex !== undefined ? d.atomIndex + 1 : '';
+      let text = '';
 
-      if (d.lobeType === 'atom') {
-        text = `${d.element}${idx} ${ELEMENT_NAMES[d.element] || d.element}`;
-      } else if (d.lobeType === '1s') {
+      if (d.lobeType === '1s') {
         text = `${d.element}${idx} 1s`;
       } else if (d.lobeType === 'sigma') {
         text = `${d.element}${idx} ${d.label}`;
@@ -54,6 +43,8 @@ export function setupTooltip(container: HTMLElement, camera: THREE.Camera, ...gr
       } else if (d.lobeType === 'lone_pair') {
         text = `${d.element}${idx} ${d.label}`;
       }
+
+      if (!text) { tooltip.classList.add('hidden'); return; }
 
       tooltip.textContent = text;
       tooltip.style.left = (e.clientX + 14) + 'px';
