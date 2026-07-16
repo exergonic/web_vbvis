@@ -73,7 +73,7 @@ export function renderOrbitals(
 
     // sp² with 2 neighbors and no π bonds is likely an OH-type oxygen misclassified
     // by angle measurement (S-O-H in H₂SO₄ gl ~120°); force sp³ with 2 σ lone pairs.
-    const ohOverride = hyb.hybridization === 'sp2' && sigmaBonds === 2 && piCount[i] === 0;
+    const ohOverride = hyb.hybridization === 'sp2' && sigmaBonds === 2 && piCount[i] === 0 && atom.element === 'O';
     if (ohOverride) {
       lonePairs = 2;
     }
@@ -84,14 +84,15 @@ export function renderOrbitals(
     // Only period-2 neighbors (C, N, O) can act as conjugation sources — S, P, etc.
     // have expanded octets and their π bonds don't propagate through σ single bonds.
     const PI_CONJ_SOURCES = new Set(['C', 'N', 'O']);
-    const hasExtPiNeighbor = neighbors.some((ni) => {
+    const piNeighborCount = neighbors.filter((ni) => {
       if (!PI_CONJ_SOURCES.has(molecule.atoms[ni].element)) return false;
       const sharedPi = molecule.bonds
         .filter((b) => (b.atom1Index === i && b.atom2Index === ni) || (b.atom1Index === ni && b.atom2Index === i))
         .reduce((s, b) => s + Math.max(0, b.order - 1), 0);
       return (piCount[ni] - sharedPi) > 0;
-    });
-    const conjugated = lonePairs > 0 && hasExtPiNeighbor && piCount[i] === 0;
+    }).length;
+    // Only conjugate if some (not all) neighbors have π bonds — prevents ring delocalization
+    const conjugated = lonePairs > 0 && piNeighborCount > 0 && piNeighborCount < neighbors.length && piCount[i] === 0;
     if (conjugated) lonePairs -= 1;
 
     const color = colorScheme.scheme === 'element' ? getElementColor(atom.element) : colorScheme.sigma;
