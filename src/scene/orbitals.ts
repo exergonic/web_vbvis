@@ -148,7 +148,7 @@ export function renderOrbitals(
     // Pi orbitals based on hybridization
     if (piDirection) {
       addPiOrbital(group, atomPos, [piDirection], colorScheme.pi, preset, atomScale, i, atom.element);
-    } else if (hyb.hybridization === 'sp' && neighborVectors.length >= 2) {
+    } else if (hyb.hybridization === 'sp' && neighborVectors.length >= 1) {
       const axis = neighborVectors[0];
       const perp = vecNormalize(findPerpendicular(axis));
       const perp2 = vecNormalize(crossProduct(axis, perp));
