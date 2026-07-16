@@ -97,13 +97,18 @@ export function renderOrbitals(
     const conjugated = lonePairs > 0 && piNeighborCount > 0 && piCount[i] === 0;
     if (conjugated) lonePairs -= 1;
 
+    // After conjugation, effective hybridization drops by one (sp³→sp², sp²→sp)
+    const effectiveHyb = conjugated && hyb.hybridization === 'sp3' ? 'sp²'
+      : conjugated && hyb.hybridization === 'sp2' ? 'sp'
+      : hybLabel;
+
     const color = colorScheme.scheme === 'element' ? getElementColor(atom.element) : colorScheme.sigma;
     const atomScale = getElementRadius(atom.element) + 0.2;
 
     // Sigma bonds: lobes pointing toward each neighbor
     for (const vec of neighborVectors) {
       const mesh = createLobeMesh(sigmaLobe(), color, 0.6, preset, atomScale);
-      mesh.userData = { atomIndex: i, element: atom.element, lobeType: 'sigma', label: hybLabel };
+      mesh.userData = { atomIndex: i, element: atom.element, lobeType: 'sigma', label: effectiveHyb };
       orientLobe(mesh, atomPos, vec);
       group.add(mesh);
     }
@@ -142,7 +147,7 @@ export function renderOrbitals(
       const lpDirs = getLonePairDirections(neighborVectors, totalHybrids, piDirection);
       for (const lpDir of lpDirs) {
         const mesh = createLobeMesh(lonePairLobe(), colorScheme.lonePair, 0.5, preset, atomScale);
-        mesh.userData = { atomIndex: i, element: atom.element, lobeType: 'lone_pair', label: hybLabel };
+        mesh.userData = { atomIndex: i, element: atom.element, lobeType: 'lone_pair', label: effectiveHyb };
         orientLobe(mesh, atomPos, lpDir);
         group.add(mesh);
       }
