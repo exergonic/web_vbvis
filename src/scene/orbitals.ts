@@ -39,7 +39,7 @@ export function renderOrbitals(
     if (atom.element === 'H') {
       const geo = new THREE.SphereGeometry(0.28, 16, 16);
       const mat = new THREE.MeshPhongMaterial({
-        color: 0xff8866,
+        color: colorScheme.lonePair,
         transparent: true,
         opacity: 0.55,
         depthWrite: false,
