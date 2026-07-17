@@ -34,6 +34,9 @@ export function getPiDirectionFromNeighbor(
   return vecNormalize(findPerpendicular(bd));
 }
 
+// Computes the π-orbital direction for an atom.
+// Returns null for sp-hybridized atoms — they have 2 perpendicular p orbitals
+// and the renderer handles them separately (not governed by neighbor π geometry).
 export function computePiDirection(
   atomIdx: number,
   molecule: Molecule,
@@ -67,10 +70,6 @@ export function computePiDirection(
       piDirection[1] - dot * ref[1],
       piDirection[2] - dot * ref[2],
     ]);
-  }
-
-  if (!piDirection && hyb.hybridization === 'sp' && neighborVectors.length >= 1) {
-    piDirection = vecNormalize(findPerpendicular(neighborVectors[0]));
   }
 
   return piDirection;

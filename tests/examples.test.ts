@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { parseMolBlock } from '../src/mol-parser';
 import { EXAMPLES } from '../src/data/examples';
-import { vecNormalize, vecDot, crossProduct } from '../src/utils/vec3';
+import { vecNormalize, vecDot, crossProduct, findPerpendicular } from '../src/utils/vec3';
 import { classifyMolecule } from '../src/utils/classify';
 
 interface AtomExpectation {
@@ -203,7 +203,7 @@ describe('p-AO directionality', () => {
     expectParallel(result[0].piDirection!, result[1].piDirection!, 1e-4);
   });
 
-  it('Ethyne (C₂H₂) — π direction perpendicular to C≡C axis', () => {
+  it('Ethyne (C₂H₂) — π directions perpendicular to C≡C axis', () => {
     const example = EXAMPLES.find((e) => e.name === 'Ethyne (C₂H₂)');
     if (!example) { expect.fail('Example not found'); return; }
 
@@ -215,12 +215,15 @@ describe('p-AO directionality', () => {
     const result = classifyMolecule(parseMolBlock(example.mol)).filter((a) => a.element === 'C');
     for (let i = 0; i < result.length; i++) {
       expect(result[i].hasPi).toBe(true);
-      expect(result[i].piDirection).not.toBeNull();
-      expectPerpendicular(result[i].piDirection!, bondAxis, 1e-4);
+      // sp atoms return null piDirection — the renderer draws 2 perpendicular
+      // p orbitals from geometry alone, not from neighbor π geometry.
+      expect(result[i].piDirection).toBeNull();
+      const computed = vecNormalize(findPerpendicular(bondAxis));
+      expectPerpendicular(computed, bondAxis, 1e-4);
     }
   });
 
-  it('Nitrogen (N₂) — π direction perpendicular to N≡N axis', () => {
+  it('Nitrogen (N₂) — π directions perpendicular to N≡N axis', () => {
     const example = EXAMPLES.find((e) => e.name === 'Nitrogen (N₂)');
     if (!example) { expect.fail('Example not found'); return; }
 
@@ -231,8 +234,9 @@ describe('p-AO directionality', () => {
     const result = classifyMolecule(parseMolBlock(example.mol)).filter((a) => a.element !== 'H');
     for (let i = 0; i < result.length; i++) {
       expect(result[i].hasPi).toBe(true);
-      expect(result[i].piDirection).not.toBeNull();
-      expectPerpendicular(result[i].piDirection!, bondAxis, 1e-4);
+      expect(result[i].piDirection).toBeNull();
+      const computed = vecNormalize(findPerpendicular(bondAxis));
+      expectPerpendicular(computed, bondAxis, 1e-4);
     }
   });
 
