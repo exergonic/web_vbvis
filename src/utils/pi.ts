@@ -18,7 +18,8 @@ function piDirectionFromNeighbor(
     const s2 = molecule.atoms[otherBonds[1]];
     const v1: [number, number, number] = [s1.x - nb.x, s1.y - nb.y, s1.z - nb.z];
     const v2: [number, number, number] = [s2.x - nb.x, s2.y - nb.y, s2.z - nb.z];
-    return vecNormalize(crossProduct(v1, v2));
+    const nrm = vecNormalize(crossProduct(v1, v2));
+    return (nrm[0] !== 0 || nrm[1] !== 0 || nrm[2] !== 0) ? nrm : null;
   }
 
   if (otherBonds.length === 1) {
@@ -26,7 +27,8 @@ function piDirectionFromNeighbor(
     const s1 = molecule.atoms[otherBonds[0]];
     const v1: [number, number, number] = [s1.x - nb.x, s1.y - nb.y, s1.z - nb.z];
     const bd: [number, number, number] = [nb.x - atomPos[0], nb.y - atomPos[1], nb.z - atomPos[2]];
-    return vecNormalize(crossProduct(v1, bd));
+    const nrm = vecNormalize(crossProduct(v1, bd));
+    return (nrm[0] !== 0 || nrm[1] !== 0 || nrm[2] !== 0) ? nrm : null;
   }
 
   // Fallback: perpendicular to the bond to the neighbor
@@ -100,6 +102,30 @@ export function computePiDirection(
       if (piCount[ni] > 0) {
         piDirection = piDirectionFromNeighbor(ni, atomIdx, adj, molecule, atomPos);
         break;
+      }
+    }
+  }
+
+  // sp without a conjugating side neighbor but with a triple-bond partner:
+  // inherit the π direction from the partner so both p-orbital pairs align
+  // across the triple bond.  If the partner's σ geometry is degenerate
+  // (collinear bonds), fall back to an arbitrary perpendicular — this is
+  // deterministic for a given bond axis, so both atoms get the same result.
+  if (!piDirection && hyb.hybridization === 'sp' && neighborVectors.length >= 1) {
+    const triplePartner = adj[atomIdx].find((ni) => {
+      const bond = molecule.bonds.find(
+        (b) => (b.atom1Index === atomIdx && b.atom2Index === ni)
+            || (b.atom1Index === ni && b.atom2Index === atomIdx)
+      );
+      return bond && bond.order === 3;
+    });
+    if (triplePartner !== undefined) {
+      piDirection = getPiDirectionFromNeighbor(atomIdx, adj, molecule, piCount, atomPos);
+      // Degenerate collinear σ geometry (e.g. linear C-C≡C-C chain) —
+      // pick a deterministic perpendicular; same axis → same result for
+      // both atoms in the triple bond pair.
+      if (!piDirection) {
+        piDirection = vecNormalize(findPerpendicular(neighborVectors[0]));
       }
     }
   }

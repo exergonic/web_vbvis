@@ -224,11 +224,10 @@ describe('p-AO directionality', () => {
     const result = classifyMolecule(parseMolBlock(example.mol)).filter((a) => a.element === 'C');
     for (let i = 0; i < result.length; i++) {
       expect(result[i].hasPi).toBe(true);
-      // sp atoms return null piDirection — the renderer draws 2 perpendicular
-      // p orbitals from geometry alone, not from neighbor π geometry.
-      expect(result[i].piDirection).toBeNull();
-      const computed = vecNormalize(findPerpendicular(bondAxis));
-      expectPerpendicular(computed, bondAxis, 1e-4);
+      // sp atoms in a triple bond now inherit a deterministic piDirection
+      // from their partner so both sets of p orbitals align
+      expect(result[i].piDirection).not.toBeNull();
+      expectPerpendicular(result[i].piDirection!, bondAxis, 1e-4);
     }
   });
 
@@ -243,9 +242,8 @@ describe('p-AO directionality', () => {
     const result = classifyMolecule(parseMolBlock(example.mol)).filter((a) => a.element !== 'H');
     for (let i = 0; i < result.length; i++) {
       expect(result[i].hasPi).toBe(true);
-      expect(result[i].piDirection).toBeNull();
-      const computed = vecNormalize(findPerpendicular(bondAxis));
-      expectPerpendicular(computed, bondAxis, 1e-4);
+      expect(result[i].piDirection).not.toBeNull();
+      expectPerpendicular(result[i].piDirection!, bondAxis, 1e-4);
     }
   });
 
@@ -282,8 +280,10 @@ describe('p-AO directionality', () => {
     expect(result[2].piDirection).not.toBeNull();
     expectParallel(result[2].piDirection!, result[1].piDirection!, 1e-4);
 
-    // C4 (sp, terminal alkyne) has no conjugating side neighbor → null piDirection
-    expect(result[3].piDirection).toBeNull();
+    // C4 (sp, terminal alkyne) inherits piDirection from C3 (triple-bond partner)
+    // so both sets of p orbitals align for proper π overlap
+    expect(result[3].piDirection).not.toBeNull();
+    expectParallel(result[3].piDirection!, result[2].piDirection!, 1e-4);
   });
 
   it('Methane (CH₄) — no π direction', () => {
