@@ -7,6 +7,7 @@ import { sigmaLobe, piLobe, lonePairLobe } from '../orbitals/lathe';
 import { getElementColor, getElementRadius } from './chem-data';
 import { VALENCE } from '../data/valence';
 import { vecNormalize, vecDot, crossProduct, findPerpendicular, rotateRodrigues, rotateToward } from '../utils/vec3';
+import { getPiDirectionFromNeighbor } from '../utils/pi';
 
 export function renderOrbitals(
   group: THREE.Group,
@@ -177,40 +178,6 @@ function addPiOrbital(
     ]);
     group.add(negative);
   }
-}
-
-function getPiDirectionFromNeighbor(
-  atomIdx: number,
-  adj: number[][],
-  molecule: Molecule,
-  piCount: number[],
-  atomPos: [number, number, number],
-): [number, number, number] | null {
-  const piNeighbor = adj[atomIdx].find((ni) => piCount[ni] > 0);
-  if (piNeighbor === undefined) return null;
-
-  const otherBonds = adj[piNeighbor].filter((ni) => ni !== atomIdx);
-  if (otherBonds.length >= 2) {
-    const nb = molecule.atoms[piNeighbor];
-    const s1 = molecule.atoms[otherBonds[0]];
-    const s2 = molecule.atoms[otherBonds[1]];
-    const v1: [number, number, number] = [s1.x - nb.x, s1.y - nb.y, s1.z - nb.z];
-    const v2: [number, number, number] = [s2.x - nb.x, s2.y - nb.y, s2.z - nb.z];
-    return vecNormalize(crossProduct(v1, v2));
-  }
-
-  if (otherBonds.length === 1) {
-    const nb = molecule.atoms[piNeighbor];
-    const s1 = molecule.atoms[otherBonds[0]];
-    const v1: [number, number, number] = [s1.x - nb.x, s1.y - nb.y, s1.z - nb.z];
-    const bd: [number, number, number] = [nb.x - atomPos[0], nb.y - atomPos[1], nb.z - atomPos[2]];
-    return vecNormalize(crossProduct(v1, bd));
-  }
-
-  // Fallback: perpendicular to the bond to the π neighbor
-  const nb = molecule.atoms[piNeighbor];
-  const bd: [number, number, number] = [nb.x - atomPos[0], nb.y - atomPos[1], nb.z - atomPos[2]];
-  return vecNormalize(findPerpendicular(bd));
 }
 
 function getLonePairDirections(
