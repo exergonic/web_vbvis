@@ -1,13 +1,11 @@
 import * as THREE from 'three';
 import type { Molecule } from '../mol-parser';
 import type { ColorScheme } from './setup';
-import { assignHybridization, assignBySteric } from '../hybridization';
 import { createLobeMesh, orientLobe } from '../orbitals';
 import { sigmaLobe, piLobe, lonePairLobe } from '../orbitals/lathe';
 import { getElementColor, getElementRadius } from './chem-data';
-import { VALENCE } from '../data/valence';
+import { classifyMolecule } from '../utils/classify';
 import { vecNormalize, vecDot, crossProduct, findPerpendicular, rotateRodrigues, rotateToward } from '../utils/vec3';
-import { getPiDirectionFromNeighbor } from '../utils/pi';
 
 export function renderOrbitals(
   group: THREE.Group,
@@ -15,20 +13,18 @@ export function renderOrbitals(
   preset: 'glass' | 'glossy' | 'matte' | 'metallic' = 'glass',
   colorScheme: { scheme: ColorScheme; sigma: number; pi: number; lonePair: number } = { scheme: 'element', sigma: 0xcccccc, pi: 0x4488ff, lonePair: 0xffaa44 },
 ): void {
+  const classifications = classifyMolecule(molecule);
   const n = molecule.atoms.length;
   const adj: number[][] = Array.from({ length: n }, () => []);
-  const piCount: number[] = new Array(n).fill(0);
   for (const bond of molecule.bonds) {
     adj[bond.atom1Index].push(bond.atom2Index);
     adj[bond.atom2Index].push(bond.atom1Index);
-    const pi = Math.max(0, bond.order - 1);
-    piCount[bond.atom1Index] += pi;
-    piCount[bond.atom2Index] += pi;
   }
 
-  for (let i = 0; i < molecule.atoms.length; i++) {
+  for (let i = 0; i < n; i++) {
     const atom = molecule.atoms[i];
     const atomPos: [number, number, number] = [atom.x, atom.y, atom.z];
+    const info = classifications[i];
 
     // Hydrogen: 1s sphere in distinct color
     if (atom.element === 'H') {
@@ -52,90 +48,34 @@ export function renderOrbitals(
       return [n.x - atom.x, n.y - atom.y, n.z - atom.z];
     });
 
-    // Determine hybridization from geometry or steric fallback
-    const hyb = neighborVectors.length >= 2
-      ? assignHybridization(atom.element, neighborVectors, piCount[i])
-      : assignBySteric(Math.min(4, Math.max(2, neighbors.length + Math.round(Math.max(0, (VALENCE[atom.element] || 4) - neighbors.length - piCount[i]) / 2))));
-
-    // Label for userData: map 'sp2' → 'sp²', 'sp3' → 'sp³'
-    const hybLabel = hyb.hybridization === 'sp2' ? 'sp²' : hyb.hybridization === 'sp3' ? 'sp³' : hyb.hybridization;
-
-    // Steric number from hybridization: sp→2, sp²→3, sp³→4
-    const stericNumber = hyb.hybridization === 'sp' ? 2
-      : hyb.hybridization === 'sp2' ? 3 : 4;
-    const sigmaBonds = neighbors.length;
-    let lonePairs = Math.max(0, stericNumber - sigmaBonds);
-
-    // Conjugation: if any neighbor has external π bonds and atom itself has none,
-    // promote one σ lone pair into the p orbital (furan O, aniline N, amide N, H₂SO₄ O).
-    const PI_CONJ_SOURCES = new Set(['C', 'N', 'O', 'S']);
-    const piNeighborCount = neighbors.filter((ni) => {
-      if (!PI_CONJ_SOURCES.has(molecule.atoms[ni].element)) return false;
-      const sharedPi = molecule.bonds
-        .filter((b) => (b.atom1Index === i && b.atom2Index === ni) || (b.atom1Index === ni && b.atom2Index === i))
-        .reduce((s, b) => s + Math.max(0, b.order - 1), 0);
-      return (piCount[ni] - sharedPi) > 0;
-    }).length;
-
-    const conjugated = lonePairs > 0 && piNeighborCount > 0 && piCount[i] === 0;
-    if (conjugated && hyb.hybridization === 'sp3') lonePairs -= 1;
-
-    // Effective hybridization label
-    const effectiveHyb = conjugated && hyb.hybridization === 'sp3' ? 'sp²' : hybLabel;
-
     const color = colorScheme.scheme === 'element' ? getElementColor(atom.element) : colorScheme.sigma;
     const atomScale = getElementRadius(atom.element) + 0.2;
 
     // Sigma bonds: lobes pointing toward each neighbor
     for (const vec of neighborVectors) {
       const mesh = createLobeMesh(sigmaLobe(), color, 0.6, preset, atomScale);
-      mesh.userData = { atomIndex: i, element: atom.element, lobeType: 'sigma', label: effectiveHyb };
+      mesh.userData = { atomIndex: i, element: atom.element, lobeType: 'sigma', label: info.hybridization };
       orientLobe(mesh, atomPos, vec);
       group.add(mesh);
     }
 
-    // Compute π direction
-    let piDirection: [number, number, number] | null = null;
-    if (conjugated) {
-      piDirection = getPiDirectionFromNeighbor(i, adj, molecule, piCount, atomPos);
-    }
-    // sp² with 1 neighbor and its own π bonds (e.g. carbonyl O): compute π from neighbor geometry
-    if (!piDirection && hyb.hybridization === 'sp2' && neighborVectors.length === 1 && piCount[i] > 0) {
-      piDirection = getPiDirectionFromNeighbor(i, adj, molecule, piCount, atomPos);
-    }
-    // sp² with enough own neighbors: compute π from own σ plane
-    if (!piDirection && hyb.hybridization === 'sp2' && neighborVectors.length >= 2 && (piCount[i] > 0 || conjugated || piCount[i] === 0)) {
-      const nrm = vecNormalize(crossProduct(neighborVectors[0], neighborVectors[1]));
-      if (nrm[0] !== 0 || nrm[1] !== 0 || nrm[2] !== 0) piDirection = nrm;
-    }
-
-    // Ensure π direction is perpendicular to the σ bond (project out parallel component)
-    if (piDirection && neighborVectors.length > 0) {
-      const ref = vecNormalize(neighborVectors[0]);
-      const dot = vecDot(ref, piDirection);
-      piDirection = vecNormalize([
-        piDirection[0] - dot * ref[0],
-        piDirection[1] - dot * ref[1],
-        piDirection[2] - dot * ref[2],
-      ]);
-    }
-
     // Lone pairs in unfilled hybrid orbital directions
-    if (lonePairs > 0) {
-      const totalHybrids = sigmaBonds + lonePairs;
-      const lpDirs = getLonePairDirections(neighborVectors, totalHybrids, piDirection);
+    if (info.lonePairs > 0) {
+      const sigmaBonds = neighbors.length;
+      const totalHybrids = sigmaBonds + info.lonePairs;
+      const lpDirs = getLonePairDirections(neighborVectors, totalHybrids, info.piDirection);
       for (const lpDir of lpDirs) {
         const mesh = createLobeMesh(lonePairLobe(), colorScheme.lonePair, 0.5, preset, atomScale);
-        mesh.userData = { atomIndex: i, element: atom.element, lobeType: 'lone_pair', label: effectiveHyb };
+        mesh.userData = { atomIndex: i, element: atom.element, lobeType: 'lone_pair', label: info.hybridization };
         orientLobe(mesh, atomPos, lpDir);
         group.add(mesh);
       }
     }
 
     // Pi orbitals based on hybridization
-    if (piDirection) {
-      addPiOrbital(group, atomPos, [piDirection], colorScheme.pi, preset, atomScale, i, atom.element);
-    } else if (hyb.hybridization === 'sp' && neighborVectors.length >= 1) {
+    if (info.piDirection) {
+      addPiOrbital(group, atomPos, [info.piDirection], colorScheme.pi, preset, atomScale, i, atom.element);
+    } else if (info.hybridization === 'sp' && neighborVectors.length >= 1) {
       const axis = neighborVectors[0];
       const perp = vecNormalize(findPerpendicular(axis));
       const perp2 = vecNormalize(crossProduct(axis, perp));
