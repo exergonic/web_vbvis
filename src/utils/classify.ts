@@ -96,15 +96,14 @@ export function classifyMolecule(molecule: Molecule): AtomClassification[] {
 
     // Step 6: pick the display label.
     // Conjugation turns sp³ into sp² (one σ lone pair became p).
-    // Map internal 'sp2'/'sp3' to Unicode 'sp²'/'sp³'.
-    const internalLabel = hybrid.hybridization === 'sp2' ? 'sp²'
+    let hybridLabel = hybrid.hybridization === 'sp2' ? 'sp²'
       : hybrid.hybridization === 'sp3' ? 'sp³'
       : hybrid.hybridization;
-    const displayLabel = conjugated && hybrid.hybridization === 'sp3' ? 'sp²' : internalLabel;
+    if (conjugated && hybrid.hybridization === 'sp3') hybridLabel = 'sp²';
 
     result.push({
       element: atom.element,
-      hybridization: displayLabel,
+      hybridization: hybridLabel,
       lonePairs,
       hasPi,
       piDirection,

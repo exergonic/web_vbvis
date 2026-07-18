@@ -90,8 +90,8 @@ export function place3D(molecule: Molecule): PlacedAtom[] {
   const queue = [root];
   while (queue.length > 0) {
     const curr = queue.shift()!;
-    const steric = adj[curr].length;
-    const vectors = getIdealVectors(steric);
+    const coordinationNumber = adj[curr].length;
+    const vectors = getIdealVectors(coordinationNumber);
 
     const unplaced = adj[curr].filter((ni) => !placed.has(ni));
     if (unplaced.length === 0) continue;
@@ -111,6 +111,9 @@ export function place3D(molecule: Molecule): PlacedAtom[] {
     }
 
     const rotated = vectors.map((v) => rotate(v));
+    // Match each placed neighbor to the closest ideal hybrid vector so
+    // the remaining vectors point into unoccupied positions (where the
+    // unplaced neighbors will go).
     const used = new Set<number>();
 
     for (const pn of placedNeighbors) {

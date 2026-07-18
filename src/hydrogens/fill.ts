@@ -45,7 +45,12 @@ export function fillMissingHydrogens(molecule: Molecule): Molecule {
       }
     }
 
-    // Place hydrogens using ideal bond angles based on total coordination
+    // 2D fallback: project ideal VSEPR angles onto the xy-plane.
+    // Linear (coordination 2) → opposite direction (180°).
+    // Trigonal (coordination 3) → 120° evenly spaced.
+    // Tetrahedral (coordination 4) → approximated as 120° offsets in
+    // the plane because the true 109.5° cones have uneven z-components
+    // that require full 3D placement (handled by the embedder instead).
     const totalCoordination = neighborAngles.length + missing;
     for (let j = 0; j < missing; j++) {
       let angle: number;

@@ -137,6 +137,9 @@ function getLonePairDirections(
   const missing = total - sigmaDirs.length;
   if (missing <= 0) return [];
 
+  // One empty hybrid orbital: lone pair opposite the σ-bond centroid
+  // (e.g. NH₃, H₂O: sp³ with one or two lone pairs filling one slot;
+  //  also AX₃E or AX₂E₂ trigonal pyramidal / bent geometries).
   if (missing === 1) {
     const sum: [number, number, number] = [0, 0, 0];
     for (const d of sigmaDirs) { sum[0] += d[0]; sum[1] += d[1]; sum[2] += d[2]; }
@@ -145,6 +148,9 @@ function getLonePairDirections(
     return [lp];
   }
 
+  // Two empty hybrids with two σ bonds: lone pair positions above and
+  // below the σ-bond plane (e.g. bent AX₂E₂ like H₂O — 2 σ bonds
+  // in the plane, 2 lone pairs in equatorial-like positions).
   if (missing === 2 && sigmaDirs.length >= 2) {
     const a = vecNormalize(sigmaDirs[0]);
     const b = vecNormalize(sigmaDirs[1]);
@@ -155,6 +161,10 @@ function getLonePairDirections(
       return [perp, [-perp[0], -perp[1], -perp[2]]];
     }
 
+    // Coefficients for placing 2 lone pairs when 2 σ bonds define a
+    // plane.  Derived from VSEPR: lone pairs occupy equatorial-like
+    // positions above and below the σ-bond plane, symmetric about it.
+    // alpha = -1 / (3(1+cosϕ)), gamma = sqrt(1 − 2/(9(1+cosϕ)))
     const sumAB: [number, number, number] = [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
     const normal = vecNormalize(crossProduct(a, b));
     const alpha = -1 / (3 * (1 + cosPhi));
@@ -173,6 +183,10 @@ function getLonePairDirections(
     return [vecNormalize(lp1), vecNormalize(lp2)];
   }
 
+  // Two empty hybrids, one σ bond, and a known π-plane normal:
+  // lone pairs placed 120° apart in the plane perpendicular to the
+  // σ bond, guided by the known plane (e.g. conjugated sp² O in
+  // furan with one σ bond and one lone pair rotated into p).
   if (missing === 2 && sigmaDirs.length === 1 && sigmaPlaneNormal) {
     const a = vecNormalize(sigmaDirs[0]);
     let axis: [number, number, number] = sigmaPlaneNormal;
@@ -189,6 +203,9 @@ function getLonePairDirections(
     return [vecNormalize(lp1), vecNormalize(lp2)];
   }
 
+  // Two empty hybrids, one σ bond, no plane normal:
+  // fallback to a perpendicular plane with 120° spacing
+  // (e.g. diatomic molecules or isolated fragments).
   if (missing === 2 && sigmaDirs.length >= 1) {
     const a = vecNormalize(sigmaDirs[0]);
     const perp = findPerpendicular(a);
@@ -207,6 +224,9 @@ function getLonePairDirections(
     return [vecNormalize(lp1), vecNormalize(lp2)];
   }
 
+  // Three empty hybrids, one σ bond: tetrahedral arrangement of
+  // the three lone pairs around the remaining σ direction
+  // (e.g. XeF₂ or similar hypervalent AX₂E₃ geometry).
   if (missing === 3 && sigmaDirs.length >= 1) {
     const a = vecNormalize(sigmaDirs[0]);
     const invSqrt3 = 1 / Math.sqrt(3);
